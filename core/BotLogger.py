@@ -3,6 +3,8 @@ import logging
 from typing import TextIO
 
 
+# TODO apply singleton pattern
+
 class BotLogger:
     """
     Custom logger class for telegram bot / Locust test and С+ web doc, and now for C+ dependencies manager.
@@ -34,7 +36,7 @@ class BotLogger:
         """
         try:
             if self.__is_logging:
-                formated_msg = f"{(datetime.datetime.now())}: '{msg}'."
+                formated_msg = f"[{(datetime.datetime.now())}]: '{msg}'"
                 colored_formated_msg = color + formated_msg + '\033[00m'
                 if self.__is_file_write:
                     self.__log_file.write(formated_msg)
