@@ -10,6 +10,9 @@ class Cmake_cmd(CMD):
     Cmake realization for command line interface
     """
 
+    def remove_dep(self):
+        pass
+
     def __init__(self):
         """
         Ugly looking command line tool
