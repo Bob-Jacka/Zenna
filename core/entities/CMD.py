@@ -1,12 +1,7 @@
 import abc
-from typing import (
-    Final,
-    Literal
-)
+from typing import Literal
 
-STATIC_CONAN_NAME: Final[str] = 'conan'
-STATIC_CMAKE_NAME: Final[str] = 'cmake'
-COMMAND_SPLITTER: Final[str] = ' '
+from Constants import STATIC_CONAN_NAME, COMMAND_SPLITTER
 
 type Build_level = Literal['release', 'debug']  # which pattern to use for building
 
@@ -16,7 +11,6 @@ class CMD(abc.ABC):
     Abstract command line interface, also wraps conan specific functions
     """
     command_line_builder: list[str] = list()  # inner state of command line
-    build_dir: str  # output directory for build files
     profile_lvl: Build_level  # level of profile
 
     def __execute(self):
@@ -43,13 +37,17 @@ class CMD(abc.ABC):
         self.__execute()
 
     def create_new_profile(self):
+        """
+        Create new conan profile
+        :return:
+        """
         self.command_line_builder.append(STATIC_CONAN_NAME + COMMAND_SPLITTER + f'profile new {self.profile_lvl} --detect')
         self.__execute()
 
     def update_dependencies(self):
         """
-        Update conan dependencies  list
-        :return:
+        Update conan dependencies list
+        :return: None
         """
         self.command_line_builder.append(STATIC_CONAN_NAME + '')
         self.command_line_builder.append('install .')
@@ -63,14 +61,19 @@ class CMD(abc.ABC):
         self.command_line_builder.append(STATIC_CONAN_NAME + ' --version')
         self.__execute()
 
+    # Flag adders:
+    @staticmethod
+    def output_flag(source: str, folder_name: str):
+        return f'{source} --output-folder={folder_name}'
+
+    @staticmethod
+    def profile_flag(source: str, profile_str: str):
+        return f'{source} --profile={profile_str}'
+
     @abc.abstractmethod
     def refresh_project(self):
         pass
 
     @abc.abstractmethod
     def first_conan_start(self, build_dir: str, lvl: Build_level):
-        pass
-
-    @abc.abstractmethod
-    def remove_dep(self):
         pass

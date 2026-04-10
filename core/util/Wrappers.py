@@ -13,13 +13,15 @@ def safe_log(function) -> Callable:
     """
 
     def wrapper(*args, **kwargs) -> Any:
-        log_msg: str = f'[{datetime.datetime.now()}]: invoked function with name: "{function.__name__}"'
+        maybe_class = function.__qualname__.split('.')[0]
+        log_msg: str = f'[{datetime.datetime.now()}]: invoked function with name: "{function.__name__}"' + (
+                " in class " + maybe_class) if len(maybe_class) > 0 else ''
         print('\033[97m' + log_msg + '\033[00m')
         try:
             r = function(*args, **kwargs)
             return r
         except Exception as e:
-            print(f'[{datetime.datetime.now()}]: An exception occurred while function invoke: {e} ""')
+            print(f'[{datetime.datetime.now()}]: An exception occurred while invoke "{function.__name__}" function: {e}')
 
     return wrapper
 
@@ -59,22 +61,3 @@ def log(function) -> Callable:
         return r
 
     return wrapper
-
-
-def cancelable_operation(function):
-    """
-    Cancel operation due to errors and restore previous condition.
-    :param function: wrapped function to cancel if error occurred.
-    :return: None
-    """
-
-    def cancel(*args, **kwargs):
-        save_list: list = list()  # list object for saving context
-        try:
-            r = function(*args, **kwargs)
-            return r
-        except Exception as e:
-            print(f'Operation: "{function.__name__}" canceled, previous condition restored')
-            print(f'Exception during executing "{function.__name__}" - {e}')
-
-    return cancel

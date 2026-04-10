@@ -10,9 +10,6 @@ class Cmake_cmd(CMD):
     Cmake realization for command line interface
     """
 
-    def remove_dep(self):
-        pass
-
     def __init__(self):
         """
         Ugly looking command line tool
@@ -36,12 +33,3 @@ class Cmake_cmd(CMD):
     def refresh_project(self):
         # TODO
         self.__execute()
-
-
-# Flag adders
-def output_flag(source: str, folder_name: str):
-    return f'{source} --output-folder={folder_name}'
-
-
-def profile_flag(source: str, profile_str: str):
-    return f'{source} --profile={profile_str}'
