@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Final, Literal
+from typing import Final
 
 IN_APP_SETTINGS_NAME: Final[str] = 'app_settings'
 """
@@ -25,4 +25,3 @@ Static name of the conan file, also may be with .txt extension
 STATIC_CONAN_NAME: Final[str] = 'conan'
 STATIC_CMAKE_NAME: Final[str] = 'cmake'
 COMMAND_SPLITTER: Final[str] = ' '
-

@@ -6,7 +6,8 @@ from os.path import exists
 
 from Constants import (
     IN_APP_SETTINGS_NAME,
-    INNER_PATH
+    INNER_PATH, OUTER_PATH,
+    STATIC_CONAN_FILE_NAME
 )
 from core.BotLogger import BotLogger
 from core.entities.CMD import CMD
@@ -14,6 +15,7 @@ from core.entities.Cmake_cmd import Cmake_cmd
 from core.entities.Conan_profile import Conan_profile
 from core.entities.Make_cmd import Make_cmd
 from core.entities.Meson_cmd import Meson_cmd
+from core.util.Utiltilies import str_user_input
 from core.util.Wrappers import (
     safe_log,
     log
@@ -23,7 +25,7 @@ from core.util.Wrappers import (
 class Backend:
     # Global backend entities:
     __cmd: CMD
-    __profile: Conan_profile = Conan_profile()
+    __profile: Conan_profile = Conan_profile(False)
     __backend_local_logger: BotLogger = BotLogger()
 
     @safe_log
@@ -70,6 +72,27 @@ class Backend:
 
     @log
     def init_conan(self):
+        path_to_conan_file = OUTER_PATH + STATIC_CONAN_FILE_NAME  # outer path to conan file, outside Zenna project
+        if exists(path_to_conan_file):
+            print(f'Conan file exists on path "{path_to_conan_file}"')
+        else:
+            print('Conan file does not exists')
+            print('Would you like to create temporary conan profile? (yes / y)')
+            while True:
+                user_input = str_user_input(True)
+                if user_input == 'yes' or user_input == 'y':
+                    while True:
+                        print('Which build type create - (build or release)')
+                        build_sys_type: str = str_user_input(False)
+                        if build_sys_type == 'build' or build_sys_type == 'release':
+                            Conan_profile.tmp_conan_file(build_sys_type)
+                            break
+                        else:
+                            print('Try again')
+                            continue
+                    break
+                else:
+                    break
         self.__profile.init_with_conan_file()
 
     @log

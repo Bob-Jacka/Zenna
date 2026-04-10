@@ -23,7 +23,6 @@ class Cmake_cmd(CMD):
         :param lvl: build level
         :return: None
         """
-        self.build_dir = build_dir
         self.profile_lvl = lvl
         self.command_line_builder.append(STATIC_CONAN_NAME)
         self.command_line_builder.append('install . ')

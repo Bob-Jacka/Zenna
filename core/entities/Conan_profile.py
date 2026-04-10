@@ -166,10 +166,11 @@ class Conan_profile:
     """
     conan_fields: _Fields
     printer: _Conan_printer
+    build_type: Literal['build', 'release', 'debug']  # duplicate in cmd
 
-    def __init__(self):
+    def __init__(self, print_fields: bool):
         self.conan_fields = _Fields()
-        self.printer = _Conan_printer(OUTER_PATH + STATIC_CONAN_FILE_NAME)
+        self.printer = _Conan_printer(OUTER_PATH + STATIC_CONAN_FILE_NAME, print_fields)
 
     def init_with_conan_file(self) -> None:
         """
@@ -180,7 +181,6 @@ class Conan_profile:
         data.setdefault(_Conan_proto.PROFILE_NAME, '')
         data.setdefault(_Conan_proto.PROFILE_VER, '0.1')  # also set as default
         data.setdefault(_Conan_proto.PROFILE_REQ, '""')
-        data.setdefault(_Conan_proto.PROFILE_GEN, '""')
 
         self.conan_fields.name = data.get(_Conan_proto.PROFILE_NAME)
         self.conan_fields.version = data.get(_Conan_proto.PROFILE_VER)
@@ -194,7 +194,7 @@ class Conan_profile:
     def is_need_for_rewrite(self):
         """
         Check for file modification time
-        :return:
+        :return: bool
         """
         pass
 
@@ -207,7 +207,7 @@ class Conan_profile:
         self.conan_fields.enter_version(new_version)
 
     @staticmethod
-    def tmp_conan_file() -> None:
+    def tmp_conan_file(build_type: Literal['build', 'release']) -> None:
         """
         Create tmp conan file with default parameters
         TODO change to printer util class
@@ -220,6 +220,7 @@ class Conan_profile:
             file.write('     name = "hello"\n')
             file.write('     version = "0.1"\n')
             file.write('     requires = ""\n')
+            file.write(f'    build = {build_type}\n')
             file.write('     generators = "CMakeDeps", "CMakeToolchain"\n')
         print('Creating temporary conan file')
 
