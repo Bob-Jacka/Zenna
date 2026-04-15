@@ -21,15 +21,15 @@ def int_user_input(min_int_constraint: int = 0, max_int_constraint: int = 10):
         print(f'Error in int user input - {e}')
 
 
-def str_user_input(null_safe: bool = False):
+def str_user_input(null_safe_check: bool = False):
     """
     Input function for strings
-    :param null_safe: boolean flag if it need to check for null string
+    :param null_safe_check: boolean flag if it need to check for null string
     :return: String object
     """
     try:
         user_choice = input(input_symbols)
-        if null_safe:
+        if null_safe_check:
             if user_choice != '' and user_choice is not None:
                 return user_choice
             else:

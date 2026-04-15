@@ -1,9 +1,10 @@
 import abc
-from typing import Literal
 
-from Constants import STATIC_CONAN_NAME, COMMAND_SPLITTER
-
-type Build_level = Literal['release', 'debug']  # which pattern to use for building
+from Constants import (
+    STATIC_CONAN_NAME,
+    COMMAND_SPLITTER,
+    Build_variants
+)
 
 
 class CMD(abc.ABC):
@@ -11,7 +12,7 @@ class CMD(abc.ABC):
     Abstract command line interface, also wraps conan specific functions
     """
     command_line_builder: list[str] = list()  # inner state of command line
-    profile_lvl: Build_level  # level of profile
+    profile_lvl: Build_variants  # level of profile
 
     def __execute(self):
         """
@@ -19,6 +20,7 @@ class CMD(abc.ABC):
         :return: None
         """
         try:
+            print(f'Command arguments: {self.command_line_builder.__str__()}')
             exec(str(self.command_line_builder))
             self.command_line_builder.clear()  # clean command line state after execution
         except Exception as e:
@@ -33,13 +35,17 @@ class CMD(abc.ABC):
         self.__execute()
 
     def detect_profile(self):
+        """
+        Detect conan profile
+        :return: None
+        """
         self.command_line_builder.append(STATIC_CONAN_NAME + COMMAND_SPLITTER + 'profile detect')
         self.__execute()
 
     def create_new_profile(self):
         """
         Create new conan profile
-        :return:
+        :return: None
         """
         self.command_line_builder.append(STATIC_CONAN_NAME + COMMAND_SPLITTER + f'profile new {self.profile_lvl} --detect')
         self.__execute()
@@ -50,7 +56,8 @@ class CMD(abc.ABC):
         :return: None
         """
         self.command_line_builder.append(STATIC_CONAN_NAME + '')
-        self.command_line_builder.append('install .')
+        self.command_line_builder.append('install')
+        self.command_line_builder.append(' .')
         self.__execute()
 
     def check_conan_installed(self):
@@ -75,5 +82,5 @@ class CMD(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def first_conan_start(self, build_dir: str, lvl: Build_level):
+    def first_conan_start(self, build_dir: str, lvl: Build_variants):
         pass

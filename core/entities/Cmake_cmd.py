@@ -1,7 +1,7 @@
+from Constants import Build_variants
 from core.entities.CMD import (
     CMD,
     STATIC_CONAN_NAME,
-    Build_level
 )
 
 
@@ -16,7 +16,7 @@ class Cmake_cmd(CMD):
         """
         pass
 
-    def first_conan_start(self, build_dir: str, lvl: Build_level):
+    def first_conan_start(self, build_dir: str, lvl: Build_variants):
         """
         Initialize conan build directory
         :param build_dir: name of the build directory

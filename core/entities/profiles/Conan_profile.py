@@ -1,12 +1,13 @@
 import dataclasses
 from enum import Enum
-from os import PathLike
 from typing import Literal
+from typing_extensions import deprecated
 
 from Constants import (
-    STATIC_CONAN_FILE_NAME,
-    OUTER_PATH
+    Build_variants,
+    FULL_PATH_TO_CONAN_FILE
 )
+from core.entities.profiles.Abstract_profile import Abstract_profile
 from core.util.Utiltilies import to_real_string
 
 
@@ -37,7 +38,7 @@ class _Fields:
     def enter_version(self, txt_ver: str) -> None:
         self.version = to_real_string(txt_ver)
 
-    def add_dependency(self, dependency_name: str, dep_version: str | None) -> None:
+    def add_dependency(self, dependency_name: str, dep_version: str | None) -> None:  # TODO delete later
         """
         Add dependency into conan profile
         :param dependency_name: name of the dependency (ex. qt)
@@ -46,13 +47,13 @@ class _Fields:
         """
         self.requires[dependency_name] = dep_version
 
-    def add_generator(self, generator_str: str) -> None:
+    def add_generator(self, generator_str: str) -> None:  # TODO delete later
         self.generators.append(generator_str)
 
-    def enter_name(self, new_name: str):
+    def enter_name(self, new_name: str):  # TODO delete later
         self.name = new_name
 
-    def remove_dependency(self, dep_name: str):
+    def remove_dependency(self, dep_name: str):  # TODO delete later
         """
         Delete dependency from conan profile
         :param dep_name: dependency name
@@ -89,12 +90,11 @@ class _Conan_printer:
     """
     is_print_by_fields: bool
 
-    def __init__(self, out_path: str | PathLike, is_print_fields: bool):
+    def __init__(self, is_print_fields: bool):
         """
-        :param out_path: full path to conanfile.py in real world
         :param is_print_fields: is need to print separate methods or just fields in class
         """
-        self.file_handler = open(out_path)
+        self.file_handler = None
         self.is_print_by_fields = is_print_fields
 
     def print(self, fields: _Fields) -> None:
@@ -103,6 +103,7 @@ class _Conan_printer:
         :param fields: fields in conan profile to print in file
         :return: None
         """
+        self.file_handler = open(FULL_PATH_TO_CONAN_FILE)
         if self.file_handler is not None:
             self._file_write('from conan import ConanFile\n')
             self._file_write('from conan.tools.cmake import CMake, cmake_layout\n')
@@ -160,19 +161,43 @@ class _Conan_proto(str, Enum):
     # PROFILE_
 
 
-class Conan_profile:
+class Conan_profile(Abstract_profile):
     """
-    Utility class for dealing with conan profile
+    Utility class for dealing with conan profile file
     """
     conan_fields: _Fields
     printer: _Conan_printer
-    build_type: Literal['build', 'release', 'debug']  # duplicate in cmd
+    build_type: Build_variants  # duplicate in cmd
 
-    def __init__(self, print_fields: bool):
+    def add_dependency(self, dependency_name: str, dependency_version: str = ''):  # TODO change to _field add_dependency
+        pass
+
+    def remove_dependency(self, dependency_name: str):  # TODO change to _field remove_dependencies
+        pass
+
+    @staticmethod
+    def create_tmp_profile(build_type):
+        """
+        Create tmp conan file with default parameters
+        TODO change to printer util class
+        :return: None
+        """
+        with open(FULL_PATH_TO_CONAN_FILE, 'w+') as file:
+            file.write('from conan import ConanFile\n\n')
+            file.write('from conan.tools.cmake import CMake, cmake_layout\n\n')
+            file.write('class Conan_profile(ConanFile):\n')
+            file.write('     name = "hello"\n')
+            file.write('     version = "0.1"\n')
+            file.write('     requires = "qt"\n')
+            file.write(f'     build = {build_type}\n')
+            file.write('     generators = "CMakeDeps", "CMakeToolchain"\n')
+        print('Creating temporary conan file')
+
+    def __init__(self, is_print_fields: bool):
         self.conan_fields = _Fields()
-        self.printer = _Conan_printer(OUTER_PATH + STATIC_CONAN_FILE_NAME, print_fields)
+        self.printer = _Conan_printer(is_print_fields)
 
-    def init_with_conan_file(self) -> None:
+    def init_profile(self) -> None:
         """
         Initialize data from existing conan file from full path to conan file
         :return: None
@@ -193,7 +218,7 @@ class Conan_profile:
 
     def is_need_for_rewrite(self):
         """
-        Check for file modification time
+        Check for file modification time and give result
         :return: bool
         """
         pass
@@ -207,57 +232,44 @@ class Conan_profile:
         self.conan_fields.enter_version(new_version)
 
     @staticmethod
-    def tmp_conan_file(build_type: Literal['build', 'release']) -> None:
-        """
-        Create tmp conan file with default parameters
-        TODO change to printer util class
-        :return: None
-        """
-        with open(OUTER_PATH + STATIC_CONAN_FILE_NAME, 'w+') as file:
-            file.write('from conan import ConanFile\n\n')
-            file.write('from conan.tools.cmake import CMake, cmake_layout\n\n')
-            file.write('class Conan_profile(ConanFile):\n')
-            file.write('     name = "hello"\n')
-            file.write('     version = "0.1"\n')
-            file.write('     requires = ""\n')
-            file.write(f'    build = {build_type}\n')
-            file.write('     generators = "CMakeDeps", "CMakeToolchain"\n')
-        print('Creating temporary conan file')
-
-    @staticmethod
+    @deprecated('Deprecated due to change utility paradigm')
     def __read_conan_file() -> dict[str, str]:
         """
         Read conan file like text file
         :return: dict with key (conan field type) and value - value :)
         """
         data_to_return: dict[str, str] = dict()
-        with open(OUTER_PATH + STATIC_CONAN_FILE_NAME, 'r') as file:
-            file_data = file.readlines()[3:]  # ignore import directive and class signature
+        with open(FULL_PATH_TO_CONAN_FILE, 'r+') as file:
+            file_data = file.readlines()  # ignore import directive and class signature TODO can cause a problem due to import directives in real files
+
             for field_line in file_data:
-                field_parameters: list = field_line.split('=', 1)  # field might contain several '=' symbols
+                field_parameters: list = field_line.split('=', 1)  # field might contain several '=' symbol, and then 1 split
+                if len(field_parameters) > 1:
 
-                field_name = field_parameters[0].strip()  # clear unuseful whitespaces
-                field_value = field_parameters[1].strip()  # clear unuseful whitespaces
-                match field_name:
-                    case _Conan_proto.PROFILE_NAME:
-                        data_to_return[_Conan_proto.PROFILE_NAME] = field_value
+                    field_name = field_parameters[0].strip()  # clear unuseful whitespaces
+                    field_value = field_parameters[1].strip()  # clear unuseful whitespaces
+                    match field_name:
+                        case _Conan_proto.PROFILE_NAME:
+                            data_to_return[_Conan_proto.PROFILE_NAME] = field_value
 
-                    case _Conan_proto.PROFILE_VER:
-                        data_to_return[_Conan_proto.PROFILE_VER] = field_value
+                        case _Conan_proto.PROFILE_VER:
+                            data_to_return[_Conan_proto.PROFILE_VER] = field_value
 
-                    case _Conan_proto.PROFILE_GEN:
-                        data_to_return[_Conan_proto.PROFILE_GEN] = field_value
+                        case _Conan_proto.PROFILE_GEN:
+                            data_to_return[_Conan_proto.PROFILE_GEN] = field_value
 
-                    case _Conan_proto.PROFILE_REQ:
-                        data_to_return[_Conan_proto.PROFILE_REQ] = field_value
+                        case _Conan_proto.PROFILE_REQ:
+                            data_to_return[_Conan_proto.PROFILE_REQ] = field_value
 
-                    case _Conan_proto.PROFILE_AUT:
-                        data_to_return[_Conan_proto.PROFILE_AUT] = field_value
+                        case _Conan_proto.PROFILE_AUT:
+                            data_to_return[_Conan_proto.PROFILE_AUT] = field_value
 
-                    case _Conan_proto.PROFILE_OPT:
-                        data_to_return[_Conan_proto.PROFILE_OPT] = field_value
+                        case _Conan_proto.PROFILE_OPT:
+                            data_to_return[_Conan_proto.PROFILE_OPT] = field_value
 
-                    case _:
-                        print(f'Unknown parameter name - {field_name} with value - {field_value}')
+                        case _:
+                            print(f'Unknown parameter name - "{field_name}" with value - "{field_value}"')
+                else:
+                    continue
 
         return data_to_return

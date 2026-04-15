@@ -15,7 +15,7 @@ from flask import (
 
 from Constants import (
     OUTER_PATH,
-    STATIC_CONAN_FILE_NAME
+    STATIC_ZENNA_FILE_NAME
 )
 from core.BotLogger import BotLogger
 from core.UI.Backend import Backend
@@ -24,7 +24,7 @@ from core.util.Utiltilies import (
     int_user_input
 )
 from core.util.Wrappers import (
-    safe_log
+    log
 )
 
 
@@ -46,14 +46,14 @@ class Web_interface(IInterface):
     def __init__(self):
         pass
 
-    @safe_log
+    @log
     def run_app(self):
         self.__web_interface.run()
-        self.backend.init_conan()
+        self.backend.check_zenna_file()
 
     @__web_interface.route('/', methods=['GET'])
     def home_page(self=None):
-        path_to_conan_file: str = OUTER_PATH + STATIC_CONAN_FILE_NAME
+        path_to_conan_file: str = OUTER_PATH + STATIC_ZENNA_FILE_NAME
         if not exists(path_to_conan_file):
             return redirect(url_for('start_page'))
         return render_template('home.html')
@@ -84,17 +84,21 @@ class Console_interface(IInterface):
     def __init__(self):
         pass
 
-    @safe_log
+    @log
     def run_app(self):
-        self.backend.init_conan()
+        self.backend.check_zenna_file()
         while True:
             print('Choose action by its number:')
+            print('0. Compile conan file')
             print('1. Update dependencies')
             print('2. Remove dependency')
             print('3. Add dependency')
             print('4. Exit')
-            user_choice = int_user_input(1, 4)
+            user_choice = int_user_input(0, 4)
             match user_choice:
+                case 0:
+                    self.frontend_local_logger.log('User choose compile conan file')
+                    self.backend.compile_conan_file()
                 case 1:
                     self.frontend_local_logger.log('User choose update dependency')
                     self.backend.update_dependencies()  # update conan state
@@ -130,6 +134,7 @@ class Console_interface(IInterface):
                             continue
                     self.backend.add_dependencies(dep_name, dep_version)
                 case 4:
+                    self.frontend_local_logger.log('User choose exit this frontend menu')
                     break
                 case _:
                     raise Exception('Unknown statement')  # might be just message

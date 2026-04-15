@@ -5,16 +5,15 @@ Zenna backend
 from os.path import exists
 
 from Constants import (
-    IN_APP_SETTINGS_NAME,
-    INNER_PATH, OUTER_PATH,
-    STATIC_CONAN_FILE_NAME
+    FULL_PATH_TO_ZENNA_FILE
 )
 from core.BotLogger import BotLogger
 from core.entities.CMD import CMD
 from core.entities.Cmake_cmd import Cmake_cmd
-from core.entities.Conan_profile import Conan_profile
 from core.entities.Make_cmd import Make_cmd
 from core.entities.Meson_cmd import Meson_cmd
+from core.entities.profiles.Conan_profile import Conan_profile
+from core.entities.profiles.Zenna_profile import Zenna_profile
 from core.util.Utiltilies import str_user_input
 from core.util.Wrappers import (
     safe_log,
@@ -25,7 +24,8 @@ from core.util.Wrappers import (
 class Backend:
     # Global backend entities:
     __cmd: CMD
-    __profile: Conan_profile = Conan_profile(False)
+    __profile: Conan_profile = Conan_profile(False)  # TODO need to create profiles separately
+    __z_profile: Zenna_profile = Zenna_profile()
     __backend_local_logger: BotLogger = BotLogger()
 
     @safe_log
@@ -49,51 +49,35 @@ class Backend:
                 raise NotImplementedError('Implement build system object first')
 
     @log
-    def decide_build_system(self):
-        if exists(INNER_PATH + IN_APP_SETTINGS_NAME):
-            self.__backend_local_logger.log('In app settings exists')
-            with open(IN_APP_SETTINGS_NAME, 'r') as settings:
-                build_sys_name = settings.read().strip()
-                self.__backend_local_logger.log(f'Choose build system from settings - {build_sys_name}')
-                self.__cmd = self.build_sys_fabric(build_sys_name)
-        else:
-            while True:
-                pass
-
-    @log
-    def create_app_settings(self):
+    def check_zenna_file(self):
         """
-        Create application settings
+        Check for zenna config file existence and continue with conan initialize
         :return: None
         """
-        with open(INNER_PATH + IN_APP_SETTINGS_NAME, 'w+') as settings_file:
-            settings_file.write('cmake')  # write cmake as a default build system
-            self.__backend_local_logger.log('Created in app settings')
-
-    @log
-    def init_conan(self):
-        path_to_conan_file = OUTER_PATH + STATIC_CONAN_FILE_NAME  # outer path to conan file, outside Zenna project
-        if exists(path_to_conan_file):
-            print(f'Conan file exists on path "{path_to_conan_file}"')
+        path_to_zenna_file = FULL_PATH_TO_ZENNA_FILE  # outer path to conan file, outside Zenna project
+        if exists(path_to_zenna_file):
+            print(f'Zenna config file exists on path "{path_to_zenna_file}"')
         else:
             print('Conan file does not exists')
-            print('Would you like to create temporary conan profile? (yes / y)')
+            print('Would you like to create temporary zenna profile? (yes / y) or (no / n)')
             while True:
-                user_input = str_user_input(True)
+                user_input = str_user_input(null_safe_check=True)
                 if user_input == 'yes' or user_input == 'y':
                     while True:
                         print('Which build type create - (build or release)')
-                        build_sys_type: str = str_user_input(False)
+                        build_sys_type: str = str_user_input(null_safe_check=False)
                         if build_sys_type == 'build' or build_sys_type == 'release':
-                            Conan_profile.tmp_conan_file(build_sys_type)
+                            Zenna_profile.create_tmp_profile(build_sys_type)
                             break
                         else:
                             print('Try again')
                             continue
                     break
                 else:
-                    break
-        self.__profile.init_with_conan_file()
+                    print('Utility cannot continue without zenna file, bye')
+                    exit(0)
+        self.__z_profile.init_profile()  # read zenna profile
+        self.__cmd = self.build_sys_fabric(self.__z_profile.get_build_system())  # TODO get build system
 
     @log
     def add_dependencies(self, dep_name: str, dep_ver: str):
@@ -104,7 +88,7 @@ class Backend:
         :return: None
         """
         if dep_name != '' or (dep_name != '' and dep_ver != ''):
-            self.__profile.conan_fields.add_dependency(dep_name, dep_ver)
+            self.__z_profile.add_dependency(dep_name, dep_ver)
         else:
             raise Exception('Dependency name or dependency version should not be empty string')
 
@@ -116,7 +100,7 @@ class Backend:
         :return: None
         """
         if dep_name != '':
-            self.__profile.conan_fields.remove_dependency(dep_name)
+            self.__z_profile.remove_dependency(dep_name)
         else:
             raise Exception('Dependency name should not be empty string')
 
@@ -126,7 +110,10 @@ class Backend:
         Update conan dependencies
         :return: None
         """
-        self.__cmd.update_dependencies()
+        if self.__cmd is not None:
+            self.__cmd.update_dependencies()
+        else:
+            pass
 
     @log
     def show_path_to_config(self):
@@ -134,4 +121,18 @@ class Backend:
         View in console for path to config
         :return: None
         """
-        self.__cmd.get_profile()
+        if self.__cmd is not None:
+            self.__cmd.get_profile()
+        else:
+            pass
+
+    @log
+    def compile_conan_file(self):
+        """
+        Compile conan file (s) and create files
+        :return: None
+        """
+        types_to_compile: list = self.__z_profile.get_build_types()
+        for type in types_to_compile:
+            print(f'Compiling type - {type}')
+            self.__profile.create_tmp_profile(type)  # TODO change from tmp configs to real
