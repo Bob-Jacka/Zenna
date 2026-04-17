@@ -5,7 +5,7 @@ Zenna backend
 from os.path import exists
 
 from Constants import (
-    FULL_PATH_TO_ZENNA_FILE
+    FULL_PATH_TO_ZENNA_FILE, Build_variants
 )
 from core.BotLogger import BotLogger
 from core.entities.CMD import CMD
@@ -54,9 +54,8 @@ class Backend:
         Check for zenna config file existence and continue with conan initialize
         :return: None
         """
-        path_to_zenna_file = FULL_PATH_TO_ZENNA_FILE  # outer path to conan file, outside Zenna project
-        if exists(path_to_zenna_file):
-            print(f'Zenna config file exists on path "{path_to_zenna_file}"')
+        if exists(FULL_PATH_TO_ZENNA_FILE):  # outer path to conan file, outside Zenna project
+            print(f'Zenna config file exists on path "{FULL_PATH_TO_ZENNA_FILE}"')
         else:
             print('Conan file does not exists')
             print('Would you like to create temporary zenna profile? (yes / y) or (no / n)')
@@ -64,10 +63,10 @@ class Backend:
                 user_input = str_user_input(null_safe_check=True)
                 if user_input == 'yes' or user_input == 'y':
                     while True:
-                        print('Which build type create - (build or release)')
+                        print(f'Which build type create - select on of (build or release)')
                         build_sys_type: str = str_user_input(null_safe_check=False)
-                        if build_sys_type == 'build' or build_sys_type == 'release':
-                            Zenna_profile.create_tmp_profile(build_sys_type)
+                        if build_sys_type == Build_variants.BUILD or build_sys_type == Build_variants.RELEASE:
+                            Zenna_profile.create_tmp_profile(Build_variants.create_build_variant(build_sys_type))
                             break
                         else:
                             print('Try again')
@@ -77,7 +76,7 @@ class Backend:
                     print('Utility cannot continue without zenna file, bye')
                     exit(0)
         self.__z_profile.init_profile()  # read zenna profile
-        self.__cmd = self.build_sys_fabric(self.__z_profile.get_build_system())  # TODO get build system
+        self.__cmd = self.build_sys_fabric(self.__z_profile.get_build_system())
 
     @log
     def add_dependencies(self, dep_name: str, dep_ver: str):
@@ -133,6 +132,9 @@ class Backend:
         :return: None
         """
         types_to_compile: list = self.__z_profile.get_build_types()
-        for type in types_to_compile:
-            print(f'Compiling type - {type}')
-            self.__profile.create_tmp_profile(type)  # TODO change from tmp configs to real
+        if len(types_to_compile) > 0:
+            for type in types_to_compile:
+                print(f'Compiling type - {type}')
+                self.__profile.save_profile(type)  # TODO change from tmp configs to real
+        else:
+            raise Exception('Cannot compile zero len compile list')

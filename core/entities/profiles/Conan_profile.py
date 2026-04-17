@@ -1,7 +1,6 @@
 import dataclasses
 from enum import Enum
 from typing import Literal
-from typing_extensions import deprecated
 
 from Constants import (
     Build_variants,
@@ -38,28 +37,11 @@ class _Fields:
     def enter_version(self, txt_ver: str) -> None:
         self.version = to_real_string(txt_ver)
 
-    def add_dependency(self, dependency_name: str, dep_version: str | None) -> None:  # TODO delete later
-        """
-        Add dependency into conan profile
-        :param dependency_name: name of the dependency (ex. qt)
-        :param dep_version: version of the dependency
-        :return:
-        """
-        self.requires[dependency_name] = dep_version
-
     def add_generator(self, generator_str: str) -> None:  # TODO delete later
         self.generators.append(generator_str)
 
     def enter_name(self, new_name: str):  # TODO delete later
         self.name = new_name
-
-    def remove_dependency(self, dep_name: str):  # TODO delete later
-        """
-        Delete dependency from conan profile
-        :param dep_name: dependency name
-        :return: None
-        """
-        del self.requires[dep_name]
 
     def contains_dependency(self, dependency_name: str) -> bool:
         return self.requires.__contains__(dependency_name)
@@ -165,15 +147,26 @@ class Conan_profile(Abstract_profile):
     """
     Utility class for dealing with conan profile file
     """
-    conan_fields: _Fields
-    printer: _Conan_printer
+    __conan_fields: _Fields
+    __printer: _Conan_printer
     build_type: Build_variants  # duplicate in cmd
 
-    def add_dependency(self, dependency_name: str, dependency_version: str = ''):  # TODO change to _field add_dependency
-        pass
+    def add_dependency(self, dependency_name: str, dependency_version: str = ''):
+        """
+        Add dependencies to conan profile
+        :param dependency_name: name of the dependency
+        :param dependency_version:
+        :return:
+        """
+        self.__conan_fields.requires[dependency_name] = dependency_version
 
-    def remove_dependency(self, dependency_name: str):  # TODO change to _field remove_dependencies
-        pass
+    def remove_dependency(self, dependency_name: str):
+        """
+        Delete dependency from conan profile
+        :param dependency_name: dependency name
+        :return: None
+        """
+        del self.__conan_fields.requires[dependency_name]
 
     @staticmethod
     def create_tmp_profile(build_type):
@@ -189,29 +182,29 @@ class Conan_profile(Abstract_profile):
             file.write('     name = "hello"\n')
             file.write('     version = "0.1"\n')
             file.write('     requires = "qt"\n')
-            file.write(f'     build = {build_type}\n')
+            file.write(f'     build = "{build_type}"\n')
             file.write('     generators = "CMakeDeps", "CMakeToolchain"\n')
         print('Creating temporary conan file')
 
     def __init__(self, is_print_fields: bool):
-        self.conan_fields = _Fields()
-        self.printer = _Conan_printer(is_print_fields)
+        self.__conan_fields = _Fields()
+        self.__printer = _Conan_printer(is_print_fields)
 
-    def init_profile(self) -> None:
+    def init_profile(self, init_path_profile: str) -> None:
         """
         Initialize data from existing conan file from full path to conan file
         :return: None
         """
-        data: dict[str, str] = self.__read_conan_file()
+        data: dict[str, str] = self.__read_conan_file(init_path_profile)
         data.setdefault(_Conan_proto.PROFILE_NAME, '')
         data.setdefault(_Conan_proto.PROFILE_VER, '0.1')  # also set as default
         data.setdefault(_Conan_proto.PROFILE_REQ, '""')
 
-        self.conan_fields.name = data.get(_Conan_proto.PROFILE_NAME)
-        self.conan_fields.version = data.get(_Conan_proto.PROFILE_VER)
+        self.__conan_fields.name = data.get(_Conan_proto.PROFILE_NAME)
+        self.__conan_fields.version = data.get(_Conan_proto.PROFILE_VER)
 
-        self.conan_fields.requires = _Fields.to_req_dict(data.get(_Conan_proto.PROFILE_REQ))
-        self.conan_fields.generators = _Fields.to_gen_list(data.get(_Conan_proto.PROFILE_GEN))
+        self.__conan_fields.requires = _Fields.to_req_dict(data.get(_Conan_proto.PROFILE_REQ))
+        self.__conan_fields.generators = _Fields.to_gen_list(data.get(_Conan_proto.PROFILE_GEN))
 
     def __rewrite_file(self):
         pass
@@ -229,17 +222,23 @@ class Conan_profile(Abstract_profile):
         :param new_version: new version to write
         :return: None
         """
-        self.conan_fields.enter_version(new_version)
+        self.__conan_fields.enter_version(new_version)
+
+    def save_profile(self):
+        """
+        Print profile in user filesystem
+        :return: None
+        """
+        self.__printer.print(self.__conan_fields)
 
     @staticmethod
-    @deprecated('Deprecated due to change utility paradigm')
-    def __read_conan_file() -> dict[str, str]:
+    def __read_conan_file(path_to_read_from: str) -> dict[str, str]:
         """
         Read conan file like text file
         :return: dict with key (conan field type) and value - value :)
         """
         data_to_return: dict[str, str] = dict()
-        with open(FULL_PATH_TO_CONAN_FILE, 'r+') as file:
+        with open(path_to_read_from, 'r+') as file:
             file_data = file.readlines()  # ignore import directive and class signature TODO can cause a problem due to import directives in real files
 
             for field_line in file_data:

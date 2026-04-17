@@ -87,7 +87,7 @@ class Zenna_profile(Abstract_profile):
     def get_namespace(self) -> str:
         return self._namespace
 
-    def get_build_system(self) -> str:
+    def get_build_system(self) -> str | list[str]:
         """
         Get build system from Zenna profile
         :return: build system string value
@@ -97,6 +97,7 @@ class Zenna_profile(Abstract_profile):
             int_counter = 0
             for build_sys in self._build_systems:
                 print(f'{int_counter}: {build_sys}')
+                int_counter += 1
             user_choice = int_user_input(0, len(self._build_systems) - 1)  # TODO can cause a problem
             return self._build_systems[user_choice]
         else:

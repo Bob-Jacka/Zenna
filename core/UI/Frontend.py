@@ -32,8 +32,8 @@ class IInterface:
     """
     Abstract interface class
     """
-    frontend_local_logger = BotLogger()  # local frontend logger
-    backend: Backend = Backend()  # backend object to interact with logic
+    _frontend_local_logger = BotLogger()  # local frontend logger
+    _backend: Backend = Backend()  # backend object to interact with logic
 
     @abc.abstractmethod
     def run_app(self):
@@ -49,7 +49,7 @@ class Web_interface(IInterface):
     @log
     def run_app(self):
         self.__web_interface.run()
-        self.backend.check_zenna_file()
+        self._backend.check_zenna_file()
 
     @__web_interface.route('/', methods=['GET'])
     def home_page(self=None):
@@ -86,8 +86,9 @@ class Console_interface(IInterface):
 
     @log
     def run_app(self):
-        self.backend.check_zenna_file()
+        self._backend.check_zenna_file()
         while True:
+            print()  # just new line symbol
             print('Choose action by its number:')
             print('0. Compile conan file')
             print('1. Update dependencies')
@@ -97,23 +98,23 @@ class Console_interface(IInterface):
             user_choice = int_user_input(0, 4)
             match user_choice:
                 case 0:
-                    self.frontend_local_logger.log('User choose compile conan file')
-                    self.backend.compile_conan_file()
+                    self._frontend_local_logger.log('User choose compile conan file')
+                    self._backend.compile_conan_file()
                 case 1:
-                    self.frontend_local_logger.log('User choose update dependency')
-                    self.backend.update_dependencies()  # update conan state
+                    self._frontend_local_logger.log('User choose update dependency')
+                    self._backend.update_dependencies()  # update conan state
                 case 2:
-                    self.frontend_local_logger.log('User choose remove dependency')
+                    self._frontend_local_logger.log('User choose remove dependency')
                     while True:
                         print('Write dependency name to remove:')
                         dep_to_rm = str_user_input()
                         if dep_to_rm != '':
-                            self.backend.remove_dependencies(dep_to_rm)
+                            self._backend.remove_dependencies(dep_to_rm)
                             break
                         else:
                             continue
                 case 3:
-                    self.frontend_local_logger.log('User choose add dependency')
+                    self._frontend_local_logger.log('User choose add dependency')
                     dep_name: str = ''
                     dep_version: str = ''
                     while True:
@@ -132,9 +133,9 @@ class Console_interface(IInterface):
                             break
                         else:
                             continue
-                    self.backend.add_dependencies(dep_name, dep_version)
+                    self._backend.add_dependencies(dep_name, dep_version)
                 case 4:
-                    self.frontend_local_logger.log('User choose exit this frontend menu')
+                    self._frontend_local_logger.log('User choose exit this frontend menu')
                     break
                 case _:
                     raise Exception('Unknown statement')  # might be just message
