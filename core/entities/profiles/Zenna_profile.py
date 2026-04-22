@@ -65,7 +65,7 @@ class Zenna_profile(Abstract_profile):
                         case _Zenna_proto.VERSION:
                             self._profile_version = field_value
                         case _Zenna_proto.REQ:
-                            self._build_requires = field_value.split(', ')
+                            self._build_requires = self.__to_map(field_value.split(', '))  # TODO error, assign list to dict entity
                         case _Zenna_proto.B_SYSTEMS:
                             self._build_systems = field_value.split(', ')
                         case _:
@@ -82,10 +82,13 @@ class Zenna_profile(Abstract_profile):
         self._build_requires[dependency_name] = dependency_version
 
     def remove_dependency(self, dependency_name: str) -> None:
-        pass
+        del self._build_requires[dependency_name]
 
     def get_namespace(self) -> str:
         return self._namespace
+
+    def get_dependencies(self) -> dict[str, str]:
+        return self._build_requires
 
     def get_build_system(self) -> str | list[str]:
         """
@@ -93,7 +96,8 @@ class Zenna_profile(Abstract_profile):
         :return: build system string value
         """
         if len(self._build_systems) > 1:
-            print('Detected several build systems, choose one to init')
+            print()  # just new line
+            print('Detected several build systems, choose one to init:')
             int_counter = 0
             for build_sys in self._build_systems:
                 print(f'{int_counter}: {build_sys}')
@@ -120,3 +124,18 @@ class Zenna_profile(Abstract_profile):
             file.write('profile.requires = qt\n')
             file.write('profile.build_systems = cmake\n')
             file.write(f'profile.build_types = {build_type}\n')
+
+    @staticmethod
+    def __to_map(to_conver: list[str]) -> dict:
+        to_return: dict[str, str] = dict()
+        for elem in to_conver:
+            elem_name: str
+            elem_ver: str
+            split_elem_list = elem.split('\\')  # split by slash
+            elem_name = split_elem_list[0].strip()
+            if len(split_elem_list) != 1:
+                elem_ver = split_elem_list[1].strip()
+            else:
+                elem_ver = ''
+            to_return[elem_name] = elem_ver
+        return to_return

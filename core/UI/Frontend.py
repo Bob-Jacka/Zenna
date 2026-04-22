@@ -85,46 +85,25 @@ class Console_interface(IInterface):
         pass
 
     @log
-    def run_app(self):
-        self._backend.check_zenna_file()
+    def dep_menu(self):
         while True:
-            print()  # just new line symbol
-            print('Choose action by its number:')
-            print('0. Compile conan file')
-            print('1. Update dependencies')
+            print()  # just new line
+            print('Choose dependency action:')
+            print('1. Add dependency')
             print('2. Remove dependency')
-            print('3. Add dependency')
-            print('4. Exit')
-            user_choice = int_user_input(0, 4)
+            print('3. Update dependency')
+            print('4. View all dependencies')
+            print('5. Exit menu')
+            user_choice = int_user_input(1, 5)
             match user_choice:
-                case 0:
-                    self._frontend_local_logger.log('User choose compile conan file')
-                    self._backend.compile_conan_file()
                 case 1:
-                    self._frontend_local_logger.log('User choose update dependency')
-                    self._backend.update_dependencies()  # update conan state
-                case 2:
-                    self._frontend_local_logger.log('User choose remove dependency')
-                    while True:
-                        print('Write dependency name to remove:')
-                        dep_to_rm = str_user_input()
-                        if dep_to_rm != '':
-                            self._backend.remove_dependencies(dep_to_rm)
-                            break
-                        else:
-                            continue
-                case 3:
                     self._frontend_local_logger.log('User choose add dependency')
                     dep_name: str = ''
                     dep_version: str = ''
-                    while True:
-                        print('Write dependency name to add:')
-                        dep_to_add = input('>> ')
-                        if dep_to_add != '':
-                            dep_name = dep_to_add
-                            break
-                        else:
-                            continue
+
+                    print('Write dependency name to add:')
+                    dep_to_add = str_user_input(True)
+                    dep_name = dep_to_add
                     while True:
                         print('Write dependency version or leave it blank:')
                         dep_ver_to_add = input('>> ')
@@ -134,7 +113,46 @@ class Console_interface(IInterface):
                         else:
                             continue
                     self._backend.add_dependencies(dep_name, dep_version)
+
+                case 2:
+                    self._frontend_local_logger.log('User choose remove dependency')
+                    while True:
+                        print('Write dependency name to remove:')
+                        dep_to_rm = str_user_input(True)
+                        self._backend.remove_dependencies(dep_to_rm)
+
+                case 3:
+                    self._frontend_local_logger.log('User choose update dependency')
+                    self._backend.update_dependencies()  # update conan state
+
                 case 4:
+                    deps: dict = self._backend.get_dependencies()
+                    if len(deps) > 0:
+                        for depend_name, dep_ver in deps.items():
+                            print(f'Dependency name: {depend_name} ', f'with version {dep_ver}' if dep_ver != '' else '')
+                    else:
+                        print('No dependencies found in config')
+
+                case 5:
+                    break
+
+    @log
+    def run_app(self):
+        self._backend.check_zenna_file()
+        while True:
+            print()  # just new line symbol
+            print('Choose action by its number:')
+            print('0. Compile conan file')
+            print('1. Dependency menu...')
+            print('2. Exit')
+            user_choice = int_user_input(0, 2)
+            match user_choice:
+                case 0:
+                    self._frontend_local_logger.log('User choose compile conan file')
+                    self._backend.compile_conan_file()
+                case 1:
+                    self.dep_menu()
+                case 2:
                     self._frontend_local_logger.log('User choose exit this frontend menu')
                     break
                 case _:

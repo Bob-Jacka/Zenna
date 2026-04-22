@@ -5,7 +5,8 @@ Zenna backend
 from os.path import exists
 
 from Constants import (
-    FULL_PATH_TO_ZENNA_FILE, Build_variants
+    FULL_PATH_TO_ZENNA_FILE,
+    Build_variants
 )
 from core.BotLogger import BotLogger
 from core.entities.CMD import CMD
@@ -113,6 +114,14 @@ class Backend:
             self.__cmd.update_dependencies()
         else:
             pass
+
+    @log
+    def get_dependencies(self) -> dict[str, str]:
+        """
+        Get profile dependencies
+        :return: None
+        """
+        return self.__z_profile.get_dependencies()
 
     @log
     def show_path_to_config(self):

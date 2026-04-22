@@ -7,7 +7,7 @@ from Constants import (
     FULL_PATH_TO_CONAN_FILE
 )
 from core.entities.profiles.Abstract_profile import Abstract_profile
-from core.util.Utiltilies import to_real_string
+from core.util.Utiltilies import to_real_world_string
 
 
 @dataclasses.dataclass
@@ -35,7 +35,7 @@ class _Fields:
         self.generators = list()
 
     def enter_version(self, txt_ver: str) -> None:
-        self.version = to_real_string(txt_ver)
+        self.version = to_real_world_string(txt_ver)
 
     def add_generator(self, generator_str: str) -> None:  # TODO delete later
         self.generators.append(generator_str)

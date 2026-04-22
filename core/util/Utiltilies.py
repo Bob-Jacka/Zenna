@@ -7,8 +7,8 @@ Input symbols in int or string user input
 def int_user_input(min_int_constraint: int = 0, max_int_constraint: int = 10):
     """
     Input function for integer type
-    :param min_int_constraint: minimum value constraint
-    :param max_int_constraint: maximum value constraint
+    :param min_int_constraint: minimum value constraint to input
+    :param max_int_constraint: maximum value constraint to input
     :return: checked int value
     """
     try:
@@ -30,17 +30,19 @@ def str_user_input(null_safe_check: bool = False):
     try:
         user_choice = input(input_symbols)
         if null_safe_check:
-            if user_choice != '' and user_choice is not None:
-                return user_choice
-            else:
-                raise Exception('Null safe constraint is not satisfied')
+            while True:
+                if user_choice != '' and user_choice is not None:
+                    return user_choice
+                else:
+                    print('Null safe constraint is not satisfied')
+                    continue
         else:
             return user_choice
     except Exception as e:
         pass
 
 
-def to_real_string(string: str):
+def to_real_world_string(string: str):
     """
     In real world we encapsulate strings in double quotes
     :param string: string to encapsulate
