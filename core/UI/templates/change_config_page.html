@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Change zenna config{% endblock %}
+
+{% block content %}
+<h1>Change config parameters</h1>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('change_config_page') }}">
+            <!-- Name (Optional) -->
+            <div class="mb-3">
+                <label for="packageName" class="form-label fw-bold">Name</label>
+                <input type="text" class="form-control" id="packageName"
+                       name="name" placeholder="Config name (Optional)"
+                       value="{{ parameters.profile_name if parameters and parameters.profile_name else '' }}">
+            </div>
+
+            <!-- Version -->
+            <div class="mb-3">
+                <label for="packageVersion" class="form-label fw-bold">Version</label>
+                <input type="text" class="form-control" id="packageVersion"
+                       name="version" placeholder="Config version" required
+                       value="{{ parameters.profile_version if parameters and parameters.profile_version else '' }}">
+            </div>
+
+            <!-- Requires (множественный ввод) -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Requires</label>
+                <div id="requiresContainer">
+                    {% if parameters and parameters.build_requires %}
+                    {% for req in parameters.build_requires %}
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" name="requires[]"
+                               value="{{ req }}">
+                        <button type="button" class="btn btn-outline-danger"
+                                onclick="this.parentElement.remove()">−
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" name="requires[]"
+                               placeholder="ex: zlib/1.2.13">
+                        <button type="button" class="btn btn-outline-secondary"
+                                onclick="addRequireField()">+
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="addRequireField()">+ Add dependency
+                </button>
+            </div>
+
+            <!-- Build Systems (множественный выбор) -->
+            <div class="mb-3">
+                <label for="buildSystems" class="form-label fw-bold">Build Systems</label>
+                <select multiple class="form-select" id="buildSystems" name="build_systems[]" size="5">
+                    {% set systems = ['cmake', 'meson', 'make', 'msbuild', 'xcode'] %}
+                    {% for sys in systems %}
+                    <option value="{{ sys }}"
+                            {% if parameters and parameters.build_systems and sys in parameters.build_systems
+                            %}selected{% endif %}>
+                        {{ sys }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Hold Ctrl to multiple select</small>
+            </div>
+
+            <!-- Build Types (множественный выбор) -->
+            <div class="mb-3">
+                <label for="buildTypes" class="form-label fw-bold">Build Types</label>
+                <select multiple class="form-select" id="buildTypes" name="build_types[]" size="4">
+                    {% set types = ['Release', 'Debug', 'RelWithDebInfo', 'MinSizeRel'] %}
+                    {% for t in types %}
+                    <option value="{{ t }}"
+                            {% if parameters and parameters.build_types and t in parameters.build_types %}selected{%
+                            endif %}>
+                        {{ t }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Hold Ctrl to multiple select</small>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Save changes</button>
+                <a href="{{ url_for('home_page') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function addRequireField() {
+        const container = document.getElementById('requiresContainer');
+        const newGroup = document.createElement('div');
+        newGroup.className = 'input-group mb-2';
+        newGroup.innerHTML = `
+            <input type="text" class="form-control" name="requires[]"
+                   placeholder="Например: bzip2/1.0.8">
+            <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">−</button>
+        `;
+        container.appendChild(newGroup);
+    }
+</script>
+{% endblock %}

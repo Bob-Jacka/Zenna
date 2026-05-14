@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Final
 
-UTIL_VERSIONS: Final[str] = '0.1.3'
+UTIL_VERSIONS: Final[str] = '0.2.3'
 
 STATIC_CONAN_NAME: Final[str] = 'conan'
 STATIC_Zenna_NAME: Final[str] = 'config'

@@ -26,7 +26,7 @@ class Backend:
     # Global backend entities:
     __cmd: CMD
     __profile: Conan_profile = Conan_profile(False)  # TODO need to create profiles separately
-    __z_profile: Zenna_profile = Zenna_profile()
+    __z_profile: Zenna_profile = None
     __backend_local_logger: BotLogger = BotLogger()
 
     @safe_log
@@ -74,8 +74,9 @@ class Backend:
                             continue
                     break
                 else:
-                    print('Utility cannot continue without zenna file, bye')
+                    print('Utility cannot continue without zenna file')
                     exit(0)
+        self.__z_profile = Zenna_profile()  # create before act
         self.__z_profile.init_profile()  # read zenna profile
         self.__cmd = self.build_sys_fabric(self.__z_profile.get_build_system())
 
@@ -144,6 +145,13 @@ class Backend:
         if len(types_to_compile) > 0:
             for type in types_to_compile:
                 print(f'Compiling type - {type}')
-                self.__profile.save_profile(type)  # TODO change from tmp configs to real
+                self.__profile.save_profile()  # TODO change from tmp configs to real
         else:
             raise Exception('Cannot compile zero len compile list')
+
+    @log
+    def get_zenna_profile(self):
+        if self.__z_profile is not None:
+            return self.__z_profile
+        else:
+            return None

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Conan parameters{% endblock %}
+
+{% block content %}
+<h1>Zenna profile parameters</h1>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <form>
+            <!-- Name -->
+            <div class="mb-3">
+                <label for="packageName" class="form-label fw-bold">Name</label>
+                <input type="text" class="form-control" id="packageName"
+                       value="{{ parameters.profile_name if parameters else '' }}" readonly>
+            </div>
+
+            <!-- Version -->
+            <div class="mb-3">
+                <label for="packageVersion" class="form-label fw-bold">Version</label>
+                <input type="text" class="form-control" id="packageVersion"
+                       value="{{ parameters.profile_version if parameters else '' }}" readonly>
+            </div>
+
+            <!-- Requires -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Requires</label>
+                {% if parameters and parameters.build_requires %}
+                <ul class="list-group">
+                    {% for req in parameters.build_requires %}
+                    <li class="list-group-item">{{ req }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No requires</p>
+                {% endif %}
+            </div>
+
+            <!-- Build Systems -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Build Systems</label>
+                {% if parameters and parameters.build_systems %}
+                <ul class="list-group">
+                    {% for bs in parameters.build_systems %}
+                    <li class="list-group-item">{{ bs }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Not specified</p>
+                {% endif %}
+            </div>
+
+            <!-- Build Types -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Build Types</label>
+                {% if parameters and parameters.build_types %}
+                <ul class="list-group">
+                    {% for bt in parameters.build_types %}
+                    <li class="list-group-item">{{ bt }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Not specified</p>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

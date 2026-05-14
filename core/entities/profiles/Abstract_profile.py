@@ -11,8 +11,9 @@ class Abstract_profile(abc.ABC):
     def remove_dependency(self, dependency_name: str):
         pass
 
+    @staticmethod
     @abc.abstractmethod
-    def create_tmp_profile(self, build_type):
+    def create_tmp_profile(build_type):
         pass
 
     @abc.abstractmethod

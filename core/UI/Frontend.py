@@ -3,6 +3,7 @@ Zenna frontend
 """
 
 import abc
+from abc import ABC
 from os.path import exists
 
 from flask import (
@@ -19,6 +20,7 @@ from Constants import (
 )
 from core.BotLogger import BotLogger
 from core.UI.Backend import Backend
+from core.entities.profiles.Zenna_profile import Zenna_profile
 from core.util.Utiltilies import (
     str_user_input,
     int_user_input
@@ -27,13 +29,14 @@ from core.util.Wrappers import (
     log
 )
 
+_backend: Backend = Backend()  # Global backend object to interact with logic
 
-class IInterface:
+
+class IInterface(ABC):
     """
     Abstract interface class
     """
     _frontend_local_logger = BotLogger()  # local frontend logger
-    _backend: Backend = Backend()  # backend object to interact with logic
 
     @abc.abstractmethod
     def run_app(self):
@@ -48,32 +51,85 @@ class Web_interface(IInterface):
 
     @log
     def run_app(self):
+        _backend.check_zenna_file()
         self.__web_interface.run()
-        self._backend.check_zenna_file()
 
+    @staticmethod
     @__web_interface.route('/', methods=['GET'])
-    def home_page(self=None):
-        path_to_conan_file: str = OUTER_PATH + STATIC_ZENNA_FILE_NAME
-        if not exists(path_to_conan_file):
+    def home_page():
+        path_to_zenna_file: str = OUTER_PATH + STATIC_ZENNA_FILE_NAME
+        if not exists(path_to_zenna_file):
             return redirect(url_for('start_page'))
-        return render_template('home.html')
+        return render_template('home_page.html')
 
-    @__web_interface.route('/about', methods=['GET'])
-    def about_page(self=None):
-        return render_template('about.html')
+    @staticmethod
+    @__web_interface.route('/about_page', methods=['GET'])
+    def about_page():
+        return render_template('about_page.html')
 
-    @__web_interface.route('/start_page', methods=['GET'])
-    def start_page(self=None):
-        data = request.data
+    @staticmethod
+    @__web_interface.route('/start_page', methods=['GET', 'POST'])
+    def start_page():
+        if request.method == 'POST':
+            name = request.form.get('name')
+            version = request.form['version']
+            requires = request.form.getlist('requires[]')
+            build_systems = request.form.getlist('build_systems[]')
+            build_types = request.form.getlist('build_types[]')
+
+            new_profile = Zenna_profile()
+            new_profile.init_profile_with_data('', name, version, build_types, build_systems, requires)
+
+            zenna_profile_ptr = _backend.get_zenna_profile()
+            zenna_profile_ptr.swap(new_profile)  # swap existing profile with new
+            zenna_profile_ptr.save_profile()
+            return redirect(url_for('home_page'))
         return render_template('start_page.html')
 
-    @__web_interface.route('/parameters', methods=['GET'])
-    def see_parameters_page(self=None):
+    @staticmethod
+    @__web_interface.route('/parameters_page', methods=['GET'])
+    def see_parameters_page():
         """
-        Page with conan parameters
+        Page with zenna parameters
         :return: None
         """
-        return render_template('parameters.html')
+        zenna_profile = _backend.get_zenna_profile()
+        if zenna_profile is None:
+            return redirect(url_for('start_page'))
+        return render_template('parameters_page.html', parameters=zenna_profile)
+
+    @staticmethod
+    @__web_interface.route('/change_config_page', methods=['GET', 'POST'])
+    def change_config_page():
+        zenna_profile_ptr = _backend.get_zenna_profile()
+        if zenna_profile_ptr is None:
+            return redirect(url_for('start_page'))
+        if request.method == 'POST':
+            name = request.form.get('name')
+            version = request.form['version']
+            requires = request.form.getlist('requires[]')
+            build_systems = request.form.getlist('build_systems[]')
+            build_types = request.form.getlist('build_types[]')
+
+            new_profile = Zenna_profile()
+            new_profile.init_profile_with_data('', name, version, build_types, build_systems, requires)
+
+            zenna_profile_ptr = _backend.get_zenna_profile()
+            zenna_profile_ptr.swap(new_profile)
+            zenna_profile_ptr.save_profile()
+            return redirect(url_for('home_page'))
+        return render_template('change_config_page.html', parameters=zenna_profile_ptr)
+
+    @staticmethod
+    @__web_interface.route('/conan_profile_page', methods=['GET'])
+    def see_conan_profile_page():
+        """
+        Page for preview conan profile
+        """
+        zenna_profile_ptr = _backend.get_zenna_profile()
+        if zenna_profile_ptr is None:
+            return redirect(url_for('start_page'))
+        return render_template('conan_profile_page.html')
 
 
 class Console_interface(IInterface):
@@ -112,24 +168,25 @@ class Console_interface(IInterface):
                             break
                         else:
                             continue
-                    self._backend.add_dependencies(dep_name, dep_version)
+                    _backend.add_dependencies(dep_name, dep_version)
 
                 case 2:
                     self._frontend_local_logger.log('User choose remove dependency')
                     while True:
                         print('Write dependency name to remove:')
                         dep_to_rm = str_user_input(True)
-                        self._backend.remove_dependencies(dep_to_rm)
+                        _backend.remove_dependencies(dep_to_rm)
 
                 case 3:
                     self._frontend_local_logger.log('User choose update dependency')
-                    self._backend.update_dependencies()  # update conan state
+                    _backend.update_dependencies()  # update conan state
 
                 case 4:
-                    deps: dict = self._backend.get_dependencies()
+                    deps: dict = _backend.get_dependencies()
                     if len(deps) > 0:
                         for depend_name, dep_ver in deps.items():
-                            print(f'Dependency name: {depend_name} ', f'with version {dep_ver}' if dep_ver != '' else '')
+                            print(f'Dependency name: {depend_name} ',
+                                  f'with version {dep_ver}' if dep_ver != '' else '')
                     else:
                         print('No dependencies found in config')
 
@@ -138,7 +195,7 @@ class Console_interface(IInterface):
 
     @log
     def run_app(self):
-        self._backend.check_zenna_file()
+        _backend.check_zenna_file()
         while True:
             print()  # just new line symbol
             print('Choose action by its number:')
@@ -149,7 +206,7 @@ class Console_interface(IInterface):
             match user_choice:
                 case 0:
                     self._frontend_local_logger.log('User choose compile conan file')
-                    self._backend.compile_conan_file()
+                    _backend.compile_conan_file()
                 case 1:
                     self.dep_menu()
                 case 2:

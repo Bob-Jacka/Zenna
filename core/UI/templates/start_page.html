@@ -1,18 +1,84 @@
 {% extends 'base.html' %}
-{% block title %}Start page{% endblock %}
+{% block title %}Conan parameters{% endblock %}
 
 {% block content %}
+<h1>Create zenna profile to continue</h1>
 
-<h1>Utility setup</h1>
+<div class="card mt-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('start_page') }}">
+            <!-- Name (необязательное) -->
+            <div class="mb-3">
+                <label for="packageName" class="form-label fw-bold">Name</label>
+                <input type="text" class="form-control" id="packageName"
+                       name="name" placeholder="Profile name (необязательно)">
+            </div>
 
-<div>
-    <h2>Set your build system:</h2>
-    TODO - выпадающий список
+            <!-- Version -->
+            <div class="mb-3">
+                <label for="packageVersion" class="form-label fw-bold">Version</label>
+                <input type="text" class="form-control" id="packageVersion"
+                       name="version" placeholder="Profile version" required>
+            </div>
+
+            <!-- Requires (множественный ввод) -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Requires</label>
+                <div id="requiresContainer">
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" name="requires[]"
+                               placeholder="ex: zlib/1.2.13">
+                        <button type="button" class="btn btn-outline-secondary"
+                                onclick="addRequireField()">+
+                        </button>
+                    </div>
+                </div>
+                <small class="text-muted">Add requirements</small>
+            </div>
+
+            <!-- Build Systems (множественный выбор) -->
+            <div class="mb-3">
+                <label for="buildSystems" class="form-label fw-bold">Build Systems</label>
+                <select multiple class="form-select" id="buildSystems" name="build_systems[]"
+                        size="4" required>
+                    <option value="cmake">CMake</option>
+                    <option value="meson">Meson</option>
+                    <option value="make">Make</option>
+                    <option value="msbuild">MSBuild</option>
+                    <option value="xcode">Xcode</option>
+                </select>
+                <small class="text-muted">Hold Ctrl to multiple select</small>
+            </div>
+
+            <!-- Build Types (множественный выбор) -->
+            <div class="mb-3">
+                <label for="buildTypes" class="form-label fw-bold">Build Types</label>
+                <select multiple class="form-select" id="buildTypes" name="build_types[]"
+                        size="3" required>
+                    <option value="Release">Release</option>
+                    <option value="Debug">Debug</option>
+                    <option value="RelWithDebInfo">RelWithDebInfo</option>
+                    <option value="MinSizeRel">MinSizeRel</option>
+                </select>
+                <small class="text-muted">Hold Ctrl to multiple select</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Save</button>
+        </form>
+    </div>
 </div>
 
-<div>
-    <h2>Set your config conan file</h2>
-    TODO - выпадающий список
-</div>
-
+<script>
+    function addRequireField() {
+        const container = document.getElementById('requiresContainer');
+        const newGroup = document.createElement('div');
+        newGroup.className = 'input-group mb-2';
+        newGroup.innerHTML = `
+            <input type="text" class="form-control" name="requires[]"
+                   placeholder="Например: bzip2/1.0.8">
+            <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">−</button>
+        `;
+        container.appendChild(newGroup);
+    }
+</script>
 {% endblock %}

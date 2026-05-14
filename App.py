@@ -35,6 +35,7 @@ if __name__ == '__main__':
         else:
             raise Exception(f'Unknown ui parameter - {cli_param}')
     else:
+        print('No valid flags to run in')
         print_help()
 
 print('Bye')  # be polite with user and say goodbye to him
