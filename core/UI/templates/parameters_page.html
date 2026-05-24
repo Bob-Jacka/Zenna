@@ -24,7 +24,7 @@
             <!-- Requires -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Requires</label>
-                {% if parameters and parameters.build_requires %}
+                {% if parameters and (parameters.build_requires|length >= 1 and parameters.build_requires[0] != '[]') %}
                 <ul class="list-group">
                     {% for req in parameters.build_requires %}
                     <li class="list-group-item">{{ req }}</li>
@@ -38,28 +38,28 @@
             <!-- Build Systems -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Build Systems</label>
-                {% if parameters and parameters.build_systems %}
+                {% if parameters and (parameters.build_systems|length >= 1 and parameters.build_systems[0] != '[]') %}
                 <ul class="list-group">
                     {% for bs in parameters.build_systems %}
                     <li class="list-group-item">{{ bs }}</li>
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-muted">Not specified</p>
+                <p class="text-muted">No build systems</p>
                 {% endif %}
             </div>
 
             <!-- Build Types -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Build Types</label>
-                {% if parameters and parameters.build_types %}
+                {% if parameters and (parameters.build_types|length >= 1 and parameters.build_types[0] != '[]') %}
                 <ul class="list-group">
                     {% for bt in parameters.build_types %}
                     <li class="list-group-item">{{ bt }}</li>
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-muted">Not specified</p>
+                <p class="text-muted">No build types</p>
                 {% endif %}
             </div>
         </form>

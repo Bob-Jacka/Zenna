@@ -23,11 +23,12 @@
                        value="{{ parameters.profile_version if parameters and parameters.profile_version else '' }}">
             </div>
 
-            <!-- Requires (множественный ввод) -->
+            <!-- Requires -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Requires</label>
                 <div id="requiresContainer">
-                    {% if parameters and parameters.build_requires %}
+                    {% if parameters and (parameters.build_requires|length >= 1 and parameters.build_requires[0] !=
+                    '[]') %}
                     {% for req in parameters.build_requires %}
                     <div class="input-group mb-2">
                         <input type="text" class="form-control" name="requires[]"
@@ -68,7 +69,7 @@
                 <small class="text-muted">Hold Ctrl to multiple select</small>
             </div>
 
-            <!-- Build Types (множественный выбор) -->
+            <!-- Build Types -->
             <div class="mb-3">
                 <label for="buildTypes" class="form-label fw-bold">Build Types</label>
                 <select multiple class="form-select" id="buildTypes" name="build_types[]" size="4">

@@ -3,11 +3,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Final
 
-UTIL_VERSIONS: Final[str] = '0.2.3'
+UTIL_VERSIONS: Final[str] = '0.3.3'
 
 STATIC_CONAN_NAME: Final[str] = 'conan'
-STATIC_Zenna_NAME: Final[str] = 'config'
-STATIC_CMAKE_NAME: Final[str] = 'cmake'
 COMMAND_SPLITTER: Final[str] = ' '
 
 OUTER_PATH: Final[str] = Path().cwd().parent.absolute().__str__() + os.path.sep
@@ -42,18 +40,44 @@ Full path directly to conan profile (s) files
 
 
 class Build_variants(str, Enum):
-    BUILD = 'build'
-    RELEASE = 'release'
-    DEBUG = 'debug'
+    """
+    Custom enum value for build variants
+    """
+    MIN_DEBUG = 'RelWithDebInfo'
+    MIN_SIZE = 'MinSizeRel'
+    RELEASE = 'Release'
+    DEBUG = 'Debug'
 
     @staticmethod
-    def create_build_variant(string_to_convert: str):
+    def create_build_variant(string_to_convert: str) -> Build_variants:
+        """
+        Convert string into build variant
+        """
         match string_to_convert:
-            case 'build':
-                return Build_variants.BUILD
+            case 'debug':
+                return Build_variants.MIN_DEBUG
             case 'release':
                 return Build_variants.RELEASE
-            case 'debug':
-                return Build_variants.DEBUG
+            case 'RelWithDebInfo':
+                return Build_variants.MIN_DEBUG
+            case 'MinSizeRel':
+                return Build_variants.MIN_SIZE
             case _:
-                raise Exception(f'Unknown type detected - {string_to_convert}')
+                raise Exception(f'Unknown type detected in creating build variant - {string_to_convert}')
+
+    @staticmethod
+    def stringify(string_to_convert: Build_variants) -> str:
+        """
+        Convert build variant to string
+        """
+        match string_to_convert:
+            case Build_variants.MIN_DEBUG:
+                return 'RelWithDebInfo'
+            case Build_variants.RELEASE:
+                return 'release'
+            case Build_variants.DEBUG:
+                return 'debug'
+            case Build_variants.MIN_SIZE:
+                return 'MinSizeRel'
+            case _:
+                raise Exception(f'Unknown type detected in stringification - {string_to_convert}')

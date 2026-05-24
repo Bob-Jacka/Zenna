@@ -1,5 +1,5 @@
 """
-Zenna backend
+Zenna backend entity
 """
 
 from os.path import exists
@@ -9,6 +9,7 @@ from Constants import (
     Build_variants
 )
 from core.BotLogger import BotLogger
+from core.entities.Bison_cmd import Bison_cmd
 from core.entities.CMD import CMD
 from core.entities.Cmake_cmd import Cmake_cmd
 from core.entities.Make_cmd import Make_cmd
@@ -26,7 +27,7 @@ class Backend:
     # Global backend entities:
     __cmd: CMD
     __profile: Conan_profile = Conan_profile(False)  # TODO need to create profiles separately
-    __z_profile: Zenna_profile = None
+    __zenna_profile: Zenna_profile = None
     __backend_local_logger: BotLogger = BotLogger()
 
     @safe_log
@@ -36,6 +37,8 @@ class Backend:
         :param cmd_name: name of the build system
         :return: Build system object
         """
+        if cmd_name is None:
+            raise Exception('Build system cannot be None')
         match cmd_name:
             case 'cmake':
                 self.__backend_local_logger.log('Choose cmake')
@@ -46,6 +49,9 @@ class Backend:
             case 'meson':
                 self.__backend_local_logger.log('Choose meson')
                 return Meson_cmd()
+            case 'bison':
+                self.__backend_local_logger.log('Choose bison')
+                return Bison_cmd()
             case _:
                 raise NotImplementedError('Implement build system object first')
 
@@ -64,21 +70,21 @@ class Backend:
                 user_input = str_user_input(null_safe_check=True)
                 if user_input == 'yes' or user_input == 'y':
                     while True:
-                        print(f'Which build type create - select on of (build or release)')
+                        print(f'Which build type create - select on of (Debug or Release)')
                         build_sys_type: str = str_user_input(null_safe_check=False)
-                        if build_sys_type == Build_variants.BUILD or build_sys_type == Build_variants.RELEASE:
+                        if build_sys_type == Build_variants.DEBUG or build_sys_type == Build_variants.RELEASE:
                             Zenna_profile.create_tmp_profile(Build_variants.create_build_variant(build_sys_type))
                             break
                         else:
-                            print('Try again')
+                            print(f'Wrong input string {build_sys_type}, Try again')
                             continue
                     break
                 else:
                     print('Utility cannot continue without zenna file')
                     exit(0)
-        self.__z_profile = Zenna_profile()  # create before act
-        self.__z_profile.init_profile()  # read zenna profile
-        self.__cmd = self.build_sys_fabric(self.__z_profile.get_build_system())
+        self.__zenna_profile = Zenna_profile()  # create before act
+        self.__zenna_profile.init_profile()  # read zenna profile
+        self.__cmd = self.build_sys_fabric(self.__zenna_profile.get_build_system())
 
     @log
     def add_dependencies(self, dep_name: str, dep_ver: str):
@@ -89,7 +95,7 @@ class Backend:
         :return: None
         """
         if dep_name != '' or (dep_name != '' and dep_ver != ''):
-            self.__z_profile.add_dependency(dep_name, dep_ver)
+            self.__zenna_profile.add_dependency(dep_name, dep_ver)
         else:
             raise Exception('Dependency name or dependency version should not be empty string')
 
@@ -101,7 +107,7 @@ class Backend:
         :return: None
         """
         if dep_name != '':
-            self.__z_profile.remove_dependency(dep_name)
+            self.__zenna_profile.remove_dependency(dep_name)
         else:
             raise Exception('Dependency name should not be empty string')
 
@@ -122,7 +128,7 @@ class Backend:
         Get profile dependencies
         :return: None
         """
-        return self.__z_profile.get_dependencies()
+        return self.__zenna_profile.get_dependencies()
 
     @log
     def show_path_to_config(self):
@@ -141,7 +147,7 @@ class Backend:
         Compile conan file (s) and create files
         :return: None
         """
-        types_to_compile: list = self.__z_profile.get_build_types()
+        types_to_compile: list = self.__zenna_profile.get_build_types()
         if len(types_to_compile) > 0:
             for type in types_to_compile:
                 print(f'Compiling type - {type}')
@@ -150,8 +156,8 @@ class Backend:
             raise Exception('Cannot compile zero len compile list')
 
     @log
-    def get_zenna_profile(self):
-        if self.__z_profile is not None:
-            return self.__z_profile
+    def get_zenna_profile(self) -> Zenna_profile | None:
+        if self.__zenna_profile is not None:
+            return self.__zenna_profile
         else:
             return None

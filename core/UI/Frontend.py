@@ -1,5 +1,5 @@
 """
-Zenna frontend
+Zenna frontend entity
 """
 
 import abc
@@ -30,13 +30,17 @@ from core.util.Wrappers import (
 )
 
 _backend: Backend = Backend()  # Global backend object to interact with logic
+_frontend_local_logger: BotLogger = BotLogger()  # local frontend logger
+
+
+class Cache:
+    profile_ptr: Zenna_profile = None
 
 
 class IInterface(ABC):
     """
     Abstract interface class
     """
-    _frontend_local_logger = BotLogger()  # local frontend logger
 
     @abc.abstractmethod
     def run_app(self):
@@ -51,7 +55,6 @@ class Web_interface(IInterface):
 
     @log
     def run_app(self):
-        _backend.check_zenna_file()
         self.__web_interface.run()
 
     @staticmethod
@@ -79,10 +82,16 @@ class Web_interface(IInterface):
 
             new_profile = Zenna_profile()
             new_profile.init_profile_with_data('', name, version, build_types, build_systems, requires)
+            Cache.profile_ptr = new_profile
 
-            zenna_profile_ptr = _backend.get_zenna_profile()
-            zenna_profile_ptr.swap(new_profile)  # swap existing profile with new
+            if Cache.profile_ptr is not None:
+                _frontend_local_logger.log('Using profile value from cache')
+                zenna_profile_ptr = Cache.profile_ptr
+            else:
+                zenna_profile_ptr = None
+            zenna_profile_ptr.swap(new_profile)  # swap existing profile with new one
             zenna_profile_ptr.save_profile()
+            Cache.profile_ptr = zenna_profile_ptr
             return redirect(url_for('home_page'))
         return render_template('start_page.html')
 
@@ -93,17 +102,31 @@ class Web_interface(IInterface):
         Page with zenna parameters
         :return: None
         """
-        zenna_profile = _backend.get_zenna_profile()
-        if zenna_profile is None:
+        if Cache.profile_ptr is not None:
+            _frontend_local_logger.log('Using profile value from cache')
+            zenna_profile_ptr = Cache.profile_ptr
+        else:
+            zenna_profile_ptr = Zenna_profile()
+            zenna_profile_ptr.init_profile()  # re init profile
+            Cache.profile_ptr = zenna_profile_ptr
+        if zenna_profile_ptr is None:
             return redirect(url_for('start_page'))
-        return render_template('parameters_page.html', parameters=zenna_profile)
+        return render_template('parameters_page.html', parameters=zenna_profile_ptr)
 
     @staticmethod
     @__web_interface.route('/change_config_page', methods=['GET', 'POST'])
     def change_config_page():
-        zenna_profile_ptr = _backend.get_zenna_profile()
+        if Cache.profile_ptr is not None:
+            _frontend_local_logger.log('Using profile value from cache')
+            zenna_profile_ptr = Cache.profile_ptr
+        else:
+            zenna_profile_ptr = _backend.get_zenna_profile()
+            Cache.profile_ptr = zenna_profile_ptr
+
         if zenna_profile_ptr is None:
             return redirect(url_for('start_page'))
+
+        # Post branch
         if request.method == 'POST':
             name = request.form.get('name')
             version = request.form['version']
@@ -114,9 +137,13 @@ class Web_interface(IInterface):
             new_profile = Zenna_profile()
             new_profile.init_profile_with_data('', name, version, build_types, build_systems, requires)
 
-            zenna_profile_ptr = _backend.get_zenna_profile()
+            if zenna_profile_ptr != new_profile:
+                new_profile.profile_version = str(int(version) + 1)  # ugly code to update config version only when update
+
             zenna_profile_ptr.swap(new_profile)
             zenna_profile_ptr.save_profile()
+
+            Cache.profile_ptr = zenna_profile_ptr  # update cache
             return redirect(url_for('home_page'))
         return render_template('change_config_page.html', parameters=zenna_profile_ptr)
 
@@ -126,7 +153,12 @@ class Web_interface(IInterface):
         """
         Page for preview conan profile
         """
-        zenna_profile_ptr = _backend.get_zenna_profile()
+        if Cache.profile_ptr is not None:
+            _frontend_local_logger.log('Using profile value from cache')
+            zenna_profile_ptr = Cache.profile_ptr
+        else:
+            zenna_profile_ptr = _backend.get_zenna_profile()
+            Cache.profile_ptr = zenna_profile_ptr
         if zenna_profile_ptr is None:
             return redirect(url_for('start_page'))
         return render_template('conan_profile_page.html')
@@ -153,7 +185,7 @@ class Console_interface(IInterface):
             user_choice = int_user_input(1, 5)
             match user_choice:
                 case 1:
-                    self._frontend_local_logger.log('User choose add dependency')
+                    _frontend_local_logger.log('User choose add dependency')
                     dep_name: str = ''
                     dep_version: str = ''
 
@@ -171,14 +203,14 @@ class Console_interface(IInterface):
                     _backend.add_dependencies(dep_name, dep_version)
 
                 case 2:
-                    self._frontend_local_logger.log('User choose remove dependency')
+                    _frontend_local_logger.log('User choose remove dependency')
                     while True:
                         print('Write dependency name to remove:')
                         dep_to_rm = str_user_input(True)
                         _backend.remove_dependencies(dep_to_rm)
 
                 case 3:
-                    self._frontend_local_logger.log('User choose update dependency')
+                    _frontend_local_logger.log('User choose update dependency')
                     _backend.update_dependencies()  # update conan state
 
                 case 4:
@@ -205,12 +237,12 @@ class Console_interface(IInterface):
             user_choice = int_user_input(0, 2)
             match user_choice:
                 case 0:
-                    self._frontend_local_logger.log('User choose compile conan file')
+                    _frontend_local_logger.log('User choose compile conan file')
                     _backend.compile_conan_file()
                 case 1:
                     self.dep_menu()
                 case 2:
-                    self._frontend_local_logger.log('User choose exit this frontend menu')
+                    _frontend_local_logger.log('User choose exit this frontend menu')
                     break
                 case _:
                     raise Exception('Unknown statement')  # might be just message

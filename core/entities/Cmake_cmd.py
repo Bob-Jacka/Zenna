@@ -12,7 +12,7 @@ class Cmake_cmd(CMD):
 
     def __init__(self):
         """
-        Ugly looking command line tool
+        Ugly looking command line tool for cmake
         """
         pass
 
